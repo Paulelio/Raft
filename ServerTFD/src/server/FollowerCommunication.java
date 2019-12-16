@@ -97,8 +97,8 @@ public class FollowerCommunication extends Thread {
 									if(integer == 0)
 										count ++;
 								}
-								if(count >= 2) {
-									log.commitEntry(log.getCommitIndex()+1);
+								if(count >= 2 && !e.isComitted()) {
+									log.commitEntry(log.getCommitIndex() +1 );
 
 								} 
 								server.getAnswers().get(index).notifyAll();
@@ -118,6 +118,7 @@ public class FollowerCommunication extends Thread {
 						server.addVote(portF, verify);
 
 						server.incrementNAnswers();
+						System.out.println(verify);
 
 						if(server.getnAnswers() < 3) {
 							System.out.println("Esperou : " + server.getnAnswers()) ;
@@ -126,8 +127,9 @@ public class FollowerCommunication extends Thread {
 							server.setnAnswers(0);
 						}else {
 							System.out.println("Deu unlock");
-							server.getVotes().notifyAll();
 							server.setnAnswers(0);
+							server.getVotes().notifyAll();
+							
 							forElection = false;
 
 						}
@@ -135,8 +137,8 @@ public class FollowerCommunication extends Thread {
 				}
 			}
 		} 
-		catch (InterruptedException e){ 
-			e.printStackTrace(); 
+		catch (InterruptedException | IllegalMonitorStateException e){ 
+			return;
 		} 
 	}
 

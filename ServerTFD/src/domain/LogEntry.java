@@ -22,7 +22,7 @@ public class LogEntry {
 	// - 
 	private static final String BAR = System.getProperty("file.separator");
 
-	private static final int MAX_FILE_SIZE_BYTES = 1000;
+	private static final int MAX_FILE_SIZE_BYTES = 150;
 
 	private File f;
 	private File s;
@@ -33,7 +33,7 @@ public class LogEntry {
 	private int prevLogTerm;
 	private int commitIndex;
 	private int port;
-
+	private int snapshotEntries;
 	private Entry lastEntry;
 
 	private ArrayList<Entry> entries;
@@ -43,6 +43,7 @@ public class LogEntry {
 
 	public LogEntry() {
 		this.entries = new ArrayList<>();
+		this.snapshotEntries = 0;
 		this.prevLogIndex = 0;
 		this.commitIndex = -1;
 		this.lastEntry = null;
@@ -94,6 +95,7 @@ public class LogEntry {
 		BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 
 		while ((st = br.readLine()) != null) {
+			snapshotEntries ++;
 			String[] stArr = st.split("-");
 			tManager.putPair(stArr[0], stArr[0]);
 		}
@@ -116,15 +118,21 @@ public class LogEntry {
 
 				String[] stArr = st.split(":")[1].split("-");
 
-				if(stArr.length == 2) {//remove
+				if(stArr.length == 2) //remove
 					tManager.removePair(stArr[1]);
-				}else 
-					if(stArr.length == 3) {//put
-						tManager.putPair(stArr[1], stArr[2]);
-					}
+
+				if(stArr.length == 3) {//put
+					tManager.putPair(stArr[1], stArr[2]);
+				}
+				if(stArr.length == 4) {//put
+					tManager.putPair(stArr[1], stArr[3]);
+
+				}
 			}
-			prevLogIndex ++;
+			prevLogIndex = e.getIndex() +1;
 		}
+		if(prevLogIndex == 0 && snapshotEntries > 0 )
+			prevLogIndex = snapshotEntries;
 		br.close();
 	}
 
@@ -139,6 +147,7 @@ public class LogEntry {
 
 		synchronized (entries) {
 			entries.add(lastEntry);
+			commitEntry(entries.size() -1);
 		}
 
 		prevLogIndex ++;
@@ -153,16 +162,16 @@ public class LogEntry {
 		}
 
 		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter(f,true));
-			writer.write(lastEntry.toString());
-			writer.newLine();
-			writer.close();
-			
+			//			BufferedWriter writer = new BufferedWriter(new FileWriter(f,true));
+			//			writer.write(lastEntry.toString());
+			//			writer.newLine();
+			//			writer.close();
+
 			if(f.length() > MAX_FILE_SIZE_BYTES) {
 				generateSnapshot();
 				clearLogFile();
 			}
-			
+
 			return true;
 
 		} catch (IOException e) {
@@ -304,6 +313,7 @@ public class LogEntry {
 
 		String dire = "src" + BAR +"server" +BAR +"file_server_"+String.valueOf(port);
 		String logFile = dire + BAR + "log_" + String.valueOf(port)+".txt";
+		System.out.println(i + " memes " + port);
 		String [] arra = entries.get(i).toString().split(":")[1].split("-");
 
 		synchronized (f) {
@@ -327,7 +337,7 @@ public class LogEntry {
 							case "d":
 								tManager.removePair(arra[1]);
 								break;
-							
+
 							case "c":
 								tManager.cas(arra[1], arra[2], arra[3]);
 								break;

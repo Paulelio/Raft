@@ -138,7 +138,11 @@ public class Server implements IServer {
 				return value instanceof String ? value : "Nao existe";
 			}
 
-
+			if(operation.compareTo("c") == 0) {
+				String value = tManager.getValue(object.split(":")[1]);
+				return value instanceof String ? value : "Nao existe";
+			}
+			
 			this.pendentEntry.add(s);
 			result = tableManager(operation, object,ss) == 0 ? "Sucesso!" : "Falhou!";
 			
@@ -197,9 +201,10 @@ public class Server implements IServer {
 			this.leaderPort = leaderID;
 			if(leaderPort == votedFor) votedFor = 0;
 
-			if(leaderCommit > log.getCommitIndex()) {
-				log.commitEntry(leaderCommit);
-			}
+//			if(leaderCommit > log.getCommitIndex()) {
+//				
+//				log.commitEntry(leaderCommit);
+//			}
 
 			if(entry == null) { 
 				ret = 0;
